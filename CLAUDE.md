@@ -8,6 +8,16 @@ Generic Solana primitives for Ruby. Extracted from Turf Monster's `app/services/
 - `Solana::Client` — JSON-RPC HTTP client with retry (rate limit + blockhash expiry)
 - `Solana::Borsh` — Borsh binary serialization (little-endian)
 - `Solana::Transaction` — Transaction builder, PDA derivation, Anchor discriminators
+- `Solana::SplToken` — SPL Token instruction builders (associated account, mint, transfer)
+- `Solana::AuthVerifier` — verify wallet signatures against an externally-stored nonce (pure, host adapts session storage)
+
+## Gem-vs-App Split Rule
+
+> If it talks to an arbitrary Anchor program: gem. If it talks to a specific program's business logic: app.
+
+The gem owns **primitives** — things any Solana-touching Ruby app would need (RPC, signing, serialization, PDA derivation, signature verification). The host app owns **program-specific logic** — config (program IDs, mints), business-layer wrappers like `Solana::Vault`, balance reconciliation against a specific schema.
+
+For shared concerns that need host-specific glue (e.g. Rails session for `AuthVerifier`), the gem provides a pure class method, the host keeps a tiny adapter module that calls it. See `turf_monster/app/services/solana/auth_verifier.rb` for the canonical adapter shape.
 
 ## API Reference
 
@@ -47,6 +57,11 @@ Generic Solana primitives for Ruby. Extracted from Turf Monster's `app/services/
 - `Transaction.anchor_discriminator(name)` — SHA256-based 8-byte discriminator
 - `Transaction.on_curve?(pubkey)` — check if pubkey is on Ed25519 curve
 
+### Solana::AuthVerifier
+- `AuthVerifier.verify!(message:, signature_b58:, pubkey_b58:, stored_nonce:, nonce_at:, max_age:)` — verifies Ed25519 sig + nonce match. Returns `pubkey_b58` on success, raises `Solana::AuthVerifier::VerificationError` on failure.
+- `AuthVerifier::NONCE_MAX_AGE` — default 300 seconds (5 min)
+- Pure: no Rails / no session. Host apps adapt their session storage and delegate.
+
 ## Design Decisions
 
 - **No Rails dependency** — pure Ruby + ed25519 gem only
@@ -57,7 +72,7 @@ Generic Solana primitives for Ruby. Extracted from Turf Monster's `app/services/
 
 ## Consumer Apps
 
-- **Turf Monster** — keeps `Solana::Config`, `Solana::Vault`, `Solana::Reconciler`, `Solana::AuthVerifier`
+- **Turf Monster** — keeps `Solana::Config`, `Solana::Vault`, `Solana::Reconciler` app-local (program-specific business logic). Now uses the gem's `Solana::AuthVerifier` + a thin session-adapter shim at `app/services/solana/auth_verifier.rb`.
 - **McRitchie Studio** — can use for future Solana features
 
 ## Testing
@@ -71,4 +86,4 @@ Generic Solana primitives for Ruby. Extracted from Turf Monster's `app/services/
 
 - GitHub: https://github.com/amcritchie/solana_studio
 - Install: `gem "solana_studio", git: "https://github.com/amcritchie/solana_studio.git"`
-- Version: 0.2.0
+- Version: 0.3.0
