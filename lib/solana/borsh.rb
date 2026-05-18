@@ -1,5 +1,14 @@
 module Solana
   module Borsh
+    # Cap on the bytes any single length-prefixed decode (vec, string) can
+    # claim. Malicious / corrupt RPC responses can carry a length field of
+    # e.g. 4_000_000_000, which without this guard would OOM the process
+    # when the caller allocates accordingly. 10MB is more than any sane
+    # Solana account / instruction payload — adjust per consumer needs.
+    MAX_DECODED_FIELD_BYTES = 10 * 1024 * 1024
+
+    class DecodedFieldTooLarge < StandardError; end
+
     module_function
 
     def encode_u8(value)
@@ -69,6 +78,39 @@ module Solana
 
     def decode_pubkey(bytes, offset = 0)
       [bytes.byteslice(offset, 32), offset + 32]
+    end
+
+    # Length-prefixed string. Reads u32 length then `length` bytes of UTF-8.
+    # Raises DecodedFieldTooLarge if the declared length exceeds the cap —
+    # protects callers from allocation-bomb DoS via crafted RPC responses.
+    def decode_string(bytes, offset = 0)
+      length, offset = decode_u32(bytes, offset)
+      check_field_length!(length, "string")
+      str = bytes.byteslice(offset, length).to_s.force_encoding("UTF-8")
+      [str, offset + length]
+    end
+
+    # Length-prefixed array. block is called per element with (bytes, offset)
+    # and must return [value, new_offset]. Bounded by MAX_DECODED_FIELD_BYTES
+    # on the declared count to prevent allocation-bomb DoS.
+    def decode_vec(bytes, offset = 0, &block)
+      length, offset = decode_u32(bytes, offset)
+      check_field_length!(length, "vec")
+      items = []
+      length.times do
+        item, offset = block.call(bytes, offset)
+        items << item
+      end
+      [items, offset]
+    end
+
+    def check_field_length!(length, kind)
+      if length > MAX_DECODED_FIELD_BYTES
+        raise DecodedFieldTooLarge,
+              "Borsh #{kind} declared length #{length} exceeds cap " \
+              "(MAX_DECODED_FIELD_BYTES=#{MAX_DECODED_FIELD_BYTES}). " \
+              "Likely a corrupt or malicious RPC response."
+      end
     end
   end
 end

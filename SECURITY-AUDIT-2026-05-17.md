@@ -2,7 +2,26 @@
 
 **Date:** 2026-05-17 (pre-publication)
 **Scope:** Full code review + `gitleaks` git-history scan + `bundle-audit` dependency check
-**Verdict:** **NEEDS FIXES before public RubyGems publication** (but cleaner than studio-engine — ~2-3 hours to ready)
+**Verdict:** **NEEDS FIXES before public RubyGems publication** → **all HIGH + all MEDIUM addressed in v0.4.1** (see "Status after v0.4.1" below)
+
+## Status after v0.4.1
+
+| # | Severity | Issue | Status |
+|---|----------|-------|--------|
+| 1 | HIGH | Explicit TLS verify_mode + HTTPS-only enforcement | ✅ Fixed — `VERIFY_PEER` + `TLS1_2_VERSION` min; `InsecureRpcUrlError` raised on `http://` non-localhost |
+| 2 | HIGH | Borsh decoded-field bounds checking | ✅ Fixed — `MAX_DECODED_FIELD_BYTES = 10MB`; new `decode_string` + `decode_vec` enforce |
+| 3 | HIGH | Constant-time nonce comparison | ✅ Fixed — `OpenSSL.fixed_length_secure_compare` via `Solana::AuthVerifier.constant_time_eq?` |
+| 4 | MEDIUM | HTTPS-only RPC env validation | ✅ Fixed (subsumed by #1) |
+| 5 | MEDIUM | Pubkey/sig length validation + tighter rescue in Transaction | ✅ Fixed — explicit `ED25519_PUBKEY_BYTES` + `ED25519_SIGNATURE_BYTES` checks before `Ed25519::VerifyKey.new` |
+| 6 | MEDIUM | Base58 input validation | ✅ Fixed — `Solana::Keypair.decode_base58` raises `ArgumentError` on invalid chars |
+| 7 | LOW | Stale docstring path | ✅ Fixed — points at `turf-monster/app/controllers/concerns/solana/session_auth.rb` |
+| 8 | LOW | Nonce-deletion docstring | ✅ Fixed — explicit IMPORTANT block in AuthVerifier module docstring |
+| 9 | INFO | Default RPC URL is devnet | ⏳ Deferred (documentation polish for README) |
+| 10 | INFO | Hardcoded canonical program IDs | ✅ No action needed (correct as-is) |
+
+**Re-audit recommended after v0.4.1** before flipping repo public + pushing to RubyGems.
+
+---
 
 ## TL;DR
 

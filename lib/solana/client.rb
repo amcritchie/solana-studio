@@ -1,6 +1,7 @@
 require "net/http"
 require "json"
 require "uri"
+require "openssl"
 
 module Solana
   class Client
@@ -12,14 +13,20 @@ module Solana
       end
     end
 
+    class InsecureRpcUrlError < ArgumentError; end
+
     MAX_RETRIES = 3
     RETRY_DELAY = 1 # seconds
 
     DEFAULT_RPC_URL = "https://api.devnet.solana.com"
 
+    # Hostnames where plain http:// is permitted (local testing only).
+    HTTP_OK_HOSTS = %w[localhost 127.0.0.1 ::1 0.0.0.0].freeze
+
     def initialize(rpc_url: nil)
       @rpc_url = rpc_url || ENV.fetch("SOLANA_RPC_URL", DEFAULT_RPC_URL)
       @uri = URI.parse(@rpc_url)
+      validate_rpc_scheme!
       @request_id = 0
     end
 
@@ -133,7 +140,15 @@ module Solana
 
     def http_post(body)
       http = Net::HTTP.new(@uri.host, @uri.port)
-      http.use_ssl = @uri.scheme == "https"
+      if @uri.scheme == "https"
+        http.use_ssl = true
+        # Belt-and-suspenders: Net::HTTP defaults to VERIFY_PEER in modern Ruby
+        # but a) some older builds have shipped with weaker defaults and b)
+        # being explicit here protects against future regressions or downstream
+        # monkey-patches.
+        http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+        http.min_version = OpenSSL::SSL::TLS1_2_VERSION
+      end
       http.open_timeout = 10
       http.read_timeout = 30
 
@@ -148,6 +163,20 @@ module Solana
       return true if error.code == 429 # rate limited
       return true if error.message.include?("Blockhash not found")
       false
+    end
+
+    # Reject plain http:// RPC URLs unless the host is local. Prevents
+    # accidental cleartext communication with public RPC providers.
+    def validate_rpc_scheme!
+      return if @uri.scheme == "https"
+      if @uri.scheme == "http" && HTTP_OK_HOSTS.include?(@uri.host.to_s.downcase)
+        return
+      end
+      raise InsecureRpcUrlError,
+            "Solana::Client requires an https:// RPC URL (got #{@rpc_url.inspect}). " \
+            "Plain http:// is only allowed for localhost. Set SOLANA_RPC_URL to a " \
+            "TLS endpoint (e.g. https://api.mainnet-beta.solana.com or your " \
+            "paid provider's HTTPS endpoint)."
     end
   end
 end

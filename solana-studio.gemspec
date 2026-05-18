@@ -1,8 +1,8 @@
 Gem::Specification.new do |spec|
   spec.name          = "solana-studio"
-  spec.version       = "0.4.0"
+  spec.version       = "0.4.1"
   spec.authors       = ["Alex McRitchie"]
-  spec.email         = ["alex@mcritchie.studio"]
+  spec.email         = ["solana-studio@mcritchie.studio"]
 
   spec.summary       = "Ruby primitives for Solana: JSON-RPC client, Ed25519 keypairs, Borsh serialization, transaction builder, wallet signature verifier"
   spec.description   = "A lightweight Ruby gem providing generic Solana building blocks — JSON-RPC client with retry, Ed25519 keypair management, Borsh encoding/decoding, transaction builder with PDA derivation and Anchor discriminators, SPL Token instruction helpers, and a pure-Ruby wallet-signature verifier (Solana::AuthVerifier)."

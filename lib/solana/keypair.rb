@@ -81,9 +81,13 @@ module Solana
     end
 
     def self.decode_base58(string)
+      raise ArgumentError, "decode_base58 requires a non-empty String, got #{string.inspect}" if string.nil? || string.empty?
+
       num = 0
       string.each_char do |c|
-        num = num * 58 + BASE58_ALPHABET.index(c)
+        idx = BASE58_ALPHABET.index(c)
+        raise ArgumentError, "Invalid base58 character #{c.inspect} (not in alphabet: 0OIl excluded)" unless idx
+        num = num * 58 + idx
       end
 
       hex = num.to_s(16)
