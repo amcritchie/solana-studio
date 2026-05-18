@@ -2,13 +2,13 @@
 
 Ruby primitives for building on Solana — JSON-RPC client, Ed25519 keypairs, Borsh serialization, and transaction builder with PDA derivation.
 
-> **Part of the McRitchie ecosystem** — see [`ECOSYSTEM.md`](https://github.com/amcritchie/mcritchie_studio/blob/main/docs/ECOSYSTEM.md) for the 5-repo map; [`house-burn-down.md`](https://github.com/amcritchie/mcritchie_studio/blob/main/docs/agents/system/house-burn-down.md) for fresh-Mac recovery.
+> **Part of the McRitchie ecosystem** — see [`ECOSYSTEM.md`](https://github.com/amcritchie/mcritchie-studio/blob/main/docs/ECOSYSTEM.md) for the 5-repo map; [`house-burn-down.md`](https://github.com/amcritchie/mcritchie-studio/blob/main/docs/agents/system/house-burn-down.md) for fresh-Mac recovery.
 
 ## Installation
 
 ```ruby
 # Gemfile
-gem "solana_studio", git: "https://github.com/amcritchie/solana_studio.git"
+gem "solana-studio", git: "https://github.com/amcritchie/solana-studio.git"
 ```
 
 ## Usage
@@ -16,7 +16,7 @@ gem "solana_studio", git: "https://github.com/amcritchie/solana_studio.git"
 ### Keypair
 
 ```ruby
-require "solana_studio"
+require "solana-studio"
 
 # Generate a new keypair
 kp = Solana::Keypair.generate

@@ -5,10 +5,12 @@ The format is [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pro
 ## v0.4.0 (2026-05-17)
 
 ### Changed (breaking)
-- **Gem renamed from `solana_studio` to `solana-studio`.** Repo URL is now `github.com/amcritchie/solana-studio`. Consumers must update their `Gemfile`:
-  ```diff
-  - gem "solana_studio", git: "https://github.com/amcritchie/solana_studio.git", tag: "v0.3.0"
-  + gem "solana-studio", git: "https://github.com/amcritchie/solana-studio.git", tag: "v0.4.0"
+- **Gem renamed from `solana_studio` to `solana-studio`.** Repo URL is now `github.com/amcritchie/solana-studio` (was `.../solana_studio`). Consumers must update their `Gemfile`:
+  ```ruby
+  # Before:
+  gem "solana_studio", git: "https://github.com/amcritchie/solana_studio.git", tag: "v0.3.0"
+  # After:
+  gem "solana-studio", git: "https://github.com/amcritchie/solana-studio.git", tag: "v0.4.0"
   ```
 - The Ruby `SolanaStudio` module name and the `Solana::*` namespace are **unchanged** — all call sites keep working without code changes.
 - Gem entry point at `lib/solana-studio.rb` (a thin `require_relative "solana_studio"` shim) ensures `gem "solana-studio"` auto-requires correctly without a `require:` option in the Gemfile.
@@ -19,7 +21,7 @@ The format is [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pro
 ## v0.3.0 (2026-05-17)
 
 ### Added
-- **`Solana::AuthVerifier`** — pure module for verifying Phantom wallet signatures against an externally-stored nonce. Extracted from turf_monster's `app/services/solana/auth_verifier.rb`. Host apps keep a thin session adapter that delegates to `Solana::AuthVerifier.verify!`.
+- **`Solana::AuthVerifier`** — pure module for verifying Phantom wallet signatures against an externally-stored nonce. Extracted from turf-monster's `app/services/solana/auth_verifier.rb`. Host apps keep a thin session adapter that delegates to `Solana::AuthVerifier.verify!`.
 - `Solana::AuthVerifier::VerificationError`, `Solana::AuthVerifier::NONCE_MAX_AGE` constants now live in the gem.
 - Updated CLAUDE.md with the gem-vs-app split rule for Solana code.
 

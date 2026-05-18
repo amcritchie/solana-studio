@@ -62,13 +62,13 @@ Troubleshooting guide for autonomous agents. Format: problem, diagnosis, fix.
 
 **Test command**
 ```bash
-cd /Users/alex/projects/solana_studio
+cd /Users/alex/projects/solana-studio
 ruby -Itest test/keypair_test.rb test/borsh_test.rb test/transaction_test.rb
 ```
 
 **Test fails with missing `ed25519` gem**
 - Diagnosis: The only runtime dependency. `LoadError: cannot load such file -- ed25519`.
-- Fix: `cd /Users/alex/projects/solana_studio && bundle install`. The gemspec requires `ed25519 ~> 1.3`.
+- Fix: `cd /Users/alex/projects/solana-studio && bundle install`. The gemspec requires `ed25519 ~> 1.3`.
 
 **Adding new tests**
 - Tests are plain minitest files in `test/`. No Rails, no fixtures. Each test file requires `test_helper.rb` which loads the gem. To add a test for `Solana::Client`, create `test/client_test.rb` following the existing pattern.

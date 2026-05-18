@@ -17,7 +17,7 @@ Generic Solana primitives for Ruby. Extracted from Turf Monster's `app/services/
 
 The gem owns **primitives** — things any Solana-touching Ruby app would need (RPC, signing, serialization, PDA derivation, signature verification). The host app owns **program-specific logic** — config (program IDs, mints), business-layer wrappers like `Solana::Vault`, balance reconciliation against a specific schema.
 
-For shared concerns that need host-specific glue (e.g. Rails session for `AuthVerifier`), the gem provides a pure class method, the host keeps a tiny adapter module that calls it. See `turf_monster/app/services/solana/auth_verifier.rb` for the canonical adapter shape.
+For shared concerns that need host-specific glue (e.g. Rails session for `AuthVerifier`), the gem provides a pure class method, the host keeps a tiny adapter module that calls it. See `turf-monster/app/services/solana/auth_verifier.rb` for the canonical adapter shape.
 
 ## API Reference
 
@@ -84,6 +84,6 @@ For shared concerns that need host-specific glue (e.g. Rails session for `AuthVe
 
 ## Repo
 
-- GitHub: https://github.com/amcritchie/solana_studio
-- Install: `gem "solana_studio", git: "https://github.com/amcritchie/solana_studio.git"`
-- Version: 0.3.0
+- GitHub: https://github.com/amcritchie/solana-studio
+- Install: `gem "solana-studio", git: "https://github.com/amcritchie/solana-studio.git", tag: "v0.4.0"`
+- Version: 0.4.0 (renamed from `solana_studio` in this release)
