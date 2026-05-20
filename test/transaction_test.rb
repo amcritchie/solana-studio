@@ -118,4 +118,86 @@ class TransactionTest < Minitest::Test
     assert b64.is_a?(String)
     assert b64.length > 0
   end
+
+  # OPSEC-017: serialize must reject a transaction whose account list requires
+  # more signatures than there are signers.
+  def test_serialize_raises_on_signer_count_mismatch
+    tx = Solana::Transaction.new
+    kp = Solana::Keypair.generate
+    other = Solana::Keypair.generate
+    tx.set_recent_blockhash(Solana::Keypair.encode_base58("\x01" * 32))
+    tx.add_signer(kp)
+    # `other` is marked is_signer in the instruction but never added as a signer.
+    tx.add_instruction(
+      program_id: Solana::Transaction::SYSTEM_PROGRAM_ID,
+      accounts: [
+        { pubkey: kp.public_key_bytes, is_signer: true, is_writable: true },
+        { pubkey: other.public_key_bytes, is_signer: true, is_writable: false }
+      ],
+      data: "\x00"
+    )
+    err = assert_raises(RuntimeError) { tx.serialize }
+    assert_match(/Signer count mismatch/, err.message)
+  end
+
+  # OPSEC-017: serialize_partial is the legitimate multi-signer path — a local
+  # signer plus an additional (client-side) signer covering every required slot.
+  def test_serialize_partial_happy_path
+    tx = Solana::Transaction.new
+    kp = Solana::Keypair.generate
+    other = Solana::Keypair.generate
+    tx.set_recent_blockhash(Solana::Keypair.encode_base58("\x01" * 32))
+    tx.add_signer(kp)
+    tx.add_instruction(
+      program_id: Solana::Transaction::SYSTEM_PROGRAM_ID,
+      accounts: [
+        { pubkey: kp.public_key_bytes, is_signer: true, is_writable: true },
+        { pubkey: other.public_key_bytes, is_signer: true, is_writable: false }
+      ],
+      data: "\x00"
+    )
+    serialized = tx.serialize_partial(additional_signers: [other.public_key_bytes])
+    assert serialized.bytesize > 0
+  end
+
+  # OPSEC-017: serialize_partial must reject a required signer that is neither
+  # a local signer nor an additional signer — otherwise its slot is silently
+  # zero-filled and the half-signed TX is still broadcastable.
+  def test_serialize_partial_raises_on_uncovered_signer
+    tx = Solana::Transaction.new
+    kp = Solana::Keypair.generate
+    other = Solana::Keypair.generate
+    tx.set_recent_blockhash(Solana::Keypair.encode_base58("\x01" * 32))
+    tx.add_signer(kp)
+    tx.add_instruction(
+      program_id: Solana::Transaction::SYSTEM_PROGRAM_ID,
+      accounts: [
+        { pubkey: kp.public_key_bytes, is_signer: true, is_writable: true },
+        { pubkey: other.public_key_bytes, is_signer: true, is_writable: false }
+      ],
+      data: "\x00"
+    )
+    err = assert_raises(RuntimeError) { tx.serialize_partial }
+    assert_match(/Signer count mismatch/, err.message)
+  end
+
+  # OPSEC-043: serialize_partial must not stash signer state on the instance.
+  def test_serialize_partial_keeps_no_instance_signer_state
+    tx = Solana::Transaction.new
+    kp = Solana::Keypair.generate
+    other = Solana::Keypair.generate
+    tx.set_recent_blockhash(Solana::Keypair.encode_base58("\x01" * 32))
+    tx.add_signer(kp)
+    tx.add_instruction(
+      program_id: Solana::Transaction::SYSTEM_PROGRAM_ID,
+      accounts: [
+        { pubkey: kp.public_key_bytes, is_signer: true, is_writable: true },
+        { pubkey: other.public_key_bytes, is_signer: true, is_writable: false }
+      ],
+      data: "\x00"
+    )
+    tx.serialize_partial(additional_signers: [other.public_key_bytes])
+    refute tx.instance_variable_defined?(:@_additional_signers),
+           "serialize_partial must not retain signer state in an instance variable"
+  end
 end

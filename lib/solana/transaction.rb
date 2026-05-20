@@ -82,6 +82,14 @@ module Solana
       num_readonly_signed = count_readonly_signed(account_keys)
       num_readonly_unsigned = count_readonly_unsigned(account_keys)
 
+      # OPSEC-017: the message header declares num_required_signatures, but we
+      # only write @signers.length signatures. A mismatch produces a malformed
+      # payload — fail loudly here instead of emitting a silently-broken TX.
+      if @signers.length != num_required_signatures
+        raise "Signer count mismatch: #{@signers.length} signer(s) provided, " \
+              "#{num_required_signatures} required by the account list"
+      end
+
       # Build message
       message = build_message(account_keys, num_required_signatures, num_readonly_signed, num_readonly_unsigned)
 
@@ -105,17 +113,26 @@ module Solana
       raise "No signers" if @signers.empty?
       raise "No instructions" if @instructions.empty?
 
-      # Mark additional signers so they appear in the account keys
-      additional_signers.each do |pubkey_bytes|
-        pk = normalize_pubkey(pubkey_bytes)
-        @_additional_signers ||= []
-        @_additional_signers << pk
-      end
+      # OPSEC-043: keep additional signers in a local — never an instance ivar.
+      # A Transaction shared across threads/requests must not leak signer state
+      # between partial-sign flows.
+      normalized_additional = additional_signers.map { |pk| normalize_pubkey(pk) }
 
-      account_keys = collect_account_keys
+      account_keys = collect_account_keys(normalized_additional)
       num_required_signatures = count_required_signatures(account_keys)
       num_readonly_signed = count_readonly_signed(account_keys)
       num_readonly_unsigned = count_readonly_unsigned(account_keys)
+
+      # OPSEC-017: every required signature slot must be covered by a local
+      # signer (signed now) or an additional signer (signs client-side later).
+      # Otherwise a slot is silently zero-filled and the half-signed TX is
+      # still broadcastable.
+      provided = @signers.length + normalized_additional.length
+      if provided != num_required_signatures
+        raise "Signer count mismatch: #{provided} provided " \
+              "(#{@signers.length} local + #{normalized_additional.length} additional), " \
+              "#{num_required_signatures} required by the account list"
+      end
 
       message = build_message(account_keys, num_required_signatures, num_readonly_signed, num_readonly_unsigned)
 
@@ -124,12 +141,10 @@ module Solana
       @signers.each { |s| signer_map[s.public_key_bytes] = s.sign(message) }
 
       signatures = account_keys.select { |_, meta| meta[:is_signer] }.map do |pk, _|
-        signer_map[pk] || ("\x00" * 64).b  # zero placeholder for unsigned slots
+        signer_map[pk] || ("\x00" * 64).b  # zero placeholder for an additional (client-side) signer
       end
 
       compact_u16(signatures.length) + signatures.join.b + message
-    ensure
-      @_additional_signers = nil
     end
 
     def serialize_partial_base64(additional_signers: [])
@@ -151,7 +166,7 @@ module Solana
       end
     end
 
-    def collect_account_keys
+    def collect_account_keys(additional_signers = [])
       keys = {}
 
       # Fee payer (first signer) is always first
@@ -166,11 +181,9 @@ module Solana
       end
 
       # Additional signers (for partial signing — not in @signers but must be marked as signer)
-      if @_additional_signers
-        @_additional_signers.each do |pk|
-          keys[pk] ||= { is_signer: true, is_writable: false }
-          keys[pk][:is_signer] = true
-        end
+      additional_signers.each do |pk|
+        keys[pk] ||= { is_signer: true, is_writable: false }
+        keys[pk][:is_signer] = true
       end
 
       # Instruction accounts

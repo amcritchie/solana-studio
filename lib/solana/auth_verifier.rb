@@ -14,6 +14,7 @@ module Solana
   #     nonce_at     = session.delete(:solana_nonce_at)
   #     Solana::AuthVerifier.verify!(
   #       message: ..., signature_b58: ..., pubkey_b58: ...,
+  #       expected_host: request.host,
   #       stored_nonce: stored_nonce, nonce_at: nonce_at
   #     )
   #
@@ -31,8 +32,9 @@ module Solana
     ED25519_SIGNATURE_BYTES = 64
 
     # Verifies that `signature_b58` is a valid Ed25519 signature over
-    # `message` made by `pubkey_b58`, AND that the `Nonce: ...` field in
-    # the message matches `stored_nonce`, AND that the nonce is not stale.
+    # `message` made by `pubkey_b58`, AND that the message is bound to
+    # `expected_host` (its opening token), AND that the `Nonce: ...` field
+    # matches `stored_nonce`, AND that the nonce is not stale.
     #
     # Returns the verified public key (base58 string) on success.
     # Raises Solana::AuthVerifier::VerificationError on any failure.
@@ -40,11 +42,15 @@ module Solana
     # @param message [String] the signed message (must contain `Nonce: <value>`)
     # @param signature_b58 [String] base58-encoded Ed25519 signature
     # @param pubkey_b58 [String] base58-encoded public key
+    # @param expected_host [String] host the signed message must name as its
+    #   opening token — rejects signatures the user made for any other domain
+    #   (OPSEC-018)
     # @param stored_nonce [String, nil] the nonce the host issued + remembers
     # @param nonce_at [Integer, nil] Unix timestamp when the nonce was issued
     # @param max_age [Integer] seconds before a nonce expires (default 300)
-    def self.verify!(message:, signature_b58:, pubkey_b58:, stored_nonce:, nonce_at: nil, max_age: NONCE_MAX_AGE)
+    def self.verify!(message:, signature_b58:, pubkey_b58:, expected_host:, stored_nonce:, nonce_at: nil, max_age: NONCE_MAX_AGE)
       raise VerificationError, "No nonce provided" if stored_nonce.nil? || stored_nonce.empty?
+      raise VerificationError, "No expected_host provided" if expected_host.nil? || expected_host.to_s.empty?
 
       if nonce_at && (Time.now.to_i - nonce_at.to_i) > max_age
         raise VerificationError, "Nonce expired"
@@ -70,6 +76,14 @@ module Solana
       claimed_nonce = message.match(/Nonce: (\w+)/)&.captures&.first
       unless claimed_nonce && constant_time_eq?(claimed_nonce, stored_nonce)
         raise VerificationError, "Invalid nonce"
+      end
+
+      # OPSEC-018: bind the signature to the host. The signed message must name
+      # the host as its opening token (SIWS-style: "<host> wants to sign in…").
+      # Without this, a signature the user produced for any other dApp — over a
+      # message that happens to carry the same nonce — would satisfy verify!.
+      unless message.start_with?("#{expected_host} ")
+        raise VerificationError, "Message is not bound to host #{expected_host}"
       end
 
       pubkey_b58

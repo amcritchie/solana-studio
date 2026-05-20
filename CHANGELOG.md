@@ -2,6 +2,20 @@
 
 The format is [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.4.2 (2026-05-19)
+
+Tier-3 fixes from the turf-monster pre-prod opsec audit (OPSEC-017/018/043).
+
+### Changed (breaking)
+- **`Solana::AuthVerifier.verify!` now requires an `expected_host:` keyword argument (OPSEC-018).** The verifier previously matched only the nonce, so a signature a user produced for any other dApp — over a message carrying the same nonce — would satisfy a host app's login. `verify!` now asserts the signed message names `expected_host` as its opening token (SIWS-style `"<host> wants to sign in…"`). Callers must pass `expected_host:` (e.g. `request.host`).
+
+### Fixed (security)
+- **`Solana::Transaction#serialize` / `#serialize_partial` now verify signer count (OPSEC-017).** `serialize` raises unless `@signers.length` equals the number of `is_signer` accounts; `serialize_partial` raises unless local + additional signers cover every required slot. Previously a missing required signer produced a malformed payload, or a zero-filled signature slot in a still-broadcastable half-signed TX.
+- **`Solana::Transaction#serialize_partial` no longer stores signer state in an instance variable (OPSEC-043).** Additional signers are kept in a local, so a `Transaction` shared across threads can't leak signer state between partial-sign flows.
+
+### Tests
+- New `test/auth_verifier_test.rb`; added signer-count + no-instance-state cases to `test/transaction_test.rb`.
+
 ## v0.4.1 (2026-05-17)
 
 Pre-public-release security hardening per `SECURITY-AUDIT-2026-05-17.md`.

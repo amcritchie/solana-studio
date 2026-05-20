@@ -58,7 +58,7 @@ For shared concerns that need host-specific glue (e.g. Rails session for `AuthVe
 - `Transaction.on_curve?(pubkey)` — check if pubkey is on Ed25519 curve
 
 ### Solana::AuthVerifier
-- `AuthVerifier.verify!(message:, signature_b58:, pubkey_b58:, stored_nonce:, nonce_at:, max_age:)` — verifies Ed25519 sig + nonce match. Returns `pubkey_b58` on success, raises `Solana::AuthVerifier::VerificationError` on failure.
+- `AuthVerifier.verify!(message:, signature_b58:, pubkey_b58:, expected_host:, stored_nonce:, nonce_at:, max_age:)` — verifies Ed25519 sig + nonce match + host binding. `expected_host:` is required (OPSEC-018): the message must name it as its opening token, so a signature made for another dApp can't pass. Returns `pubkey_b58` on success, raises `Solana::AuthVerifier::VerificationError` on failure.
 - `AuthVerifier::NONCE_MAX_AGE` — default 300 seconds (5 min)
 - Pure: no Rails / no session. Host apps adapt their session storage and delegate.
 
@@ -77,10 +77,11 @@ For shared concerns that need host-specific glue (e.g. Rails session for `AuthVe
 
 ## Testing
 
-- `ruby -Itest test/keypair_test.rb test/borsh_test.rb test/transaction_test.rb` — 9 tests
+- `ruby -Itest -e 'Dir["test/*_test.rb"].sort.each { |f| require File.expand_path(f) }'` — 43 tests
 - **Keypair**: generate, base58 roundtrip, from_bytes, from_json_file, sign, address alias
 - **Borsh**: encode/decode roundtrips for u8, u16, u32, u64, string, bool, pubkey, vec, bytes32
-- **Transaction**: anchor discriminator (determinism, uniqueness), PDA derivation (determinism, not on curve), on_curve? check, serialization, error cases
+- **Transaction**: anchor discriminator (determinism, uniqueness), PDA derivation (determinism, not on curve), on_curve? check, serialization, signer-count validation (OPSEC-017), no instance signer state (OPSEC-043), error cases
+- **AuthVerifier**: host-bound verify (OPSEC-018), host mismatch + blank-host + partial-prefix rejection
 
 ## Repo
 
