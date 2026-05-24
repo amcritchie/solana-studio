@@ -6,5 +6,5 @@ require_relative "solana/spl_token"
 require_relative "solana/auth_verifier"
 
 module SolanaStudio
-  VERSION = "0.4.1"
+  VERSION = "0.4.2"
 end
