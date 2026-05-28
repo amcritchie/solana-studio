@@ -87,4 +87,4 @@ For shared concerns that need host-specific glue (e.g. Rails session for `AuthVe
 
 - GitHub: https://github.com/amcritchie/solana-studio
 - Install: `gem "solana-studio", "~> 0.4.0"` (RubyGems — consumer apps use this form). The legacy `git:` install form (`gem "solana-studio", git: "...", tag: "v0.4.0"`) still works but should not be used for new code.
-- Version: 0.4.2 (gemspec canonical). Renamed from `solana_studio` in v0.4.0 (2026-05-17).
+- Version: 0.4.3 (gemspec canonical). Renamed from `solana_studio` in v0.4.0 (2026-05-17).
