@@ -152,7 +152,13 @@ module Solana
       http.open_timeout = 10
       http.read_timeout = 30
 
-      request = Net::HTTP::Post.new(@uri.path.empty? ? "/" : @uri.path)
+      # `request_uri` preserves the query string (path + "?" + query).
+      # `path` alone drops it, which silently breaks RPC providers that
+      # carry credentials on the query — e.g. Helius:
+      # `https://devnet.helius-rpc.com/?api-key=…`. The server replies
+      # with `{"error":"missing api key"}` and the client retries.
+      request_path = @uri.request_uri
+      request = Net::HTTP::Post.new(request_path.empty? ? "/" : request_path)
       request["Content-Type"] = "application/json"
       request.body = body.to_json
 

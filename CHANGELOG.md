@@ -2,6 +2,14 @@
 
 The format is [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.4.3 (2026-05-27)
+
+### Fixed
+- **`Solana::Client#http_post` now preserves the query string when constructing the `Net::HTTP::Post` path** (was: dropped). RPC providers that carry their API key on the query — Helius (`https://devnet.helius-rpc.com/?api-key=…`), QuickNode, Triton — previously received an authless request and replied with their equivalent of `"missing api key"`, breaking every RPC call. `@uri.request_uri` is the correct accessor (path + "?" + query); `@uri.path` returns only the path portion. Surfaced when turf-monster moved off the public devnet endpoint to Helius.
+
+### Tests
+- New `test/client_test.rb` (2 tests): asserts `http_post` builds the request with the full request-URI (path + query) when the RPC URL carries a query string, and falls back to `"/"` when path is empty.
+
 ## v0.4.2 (2026-05-19)
 
 Tier-3 fixes from the turf-monster pre-prod opsec audit (OPSEC-017/018/043).
