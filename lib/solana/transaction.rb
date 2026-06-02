@@ -110,7 +110,10 @@ module Solana
     # additional_signers: array of pubkey bytes (32-byte strings) that will sign later.
     def serialize_partial(additional_signers: [])
       raise "No blockhash set" unless @recent_blockhash
-      raise "No signers" if @signers.empty?
+      # A fully KEYLESS build (zero local signers, all slots filled by external
+      # additional_signers) is legitimate for multi-party coordination where the
+      # server never holds a key — only require SOME signer is accounted for.
+      raise "No signers" if @signers.empty? && additional_signers.empty?
       raise "No instructions" if @instructions.empty?
 
       # OPSEC-043: keep additional signers in a local — never an instance ivar.
