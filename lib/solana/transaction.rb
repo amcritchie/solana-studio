@@ -172,12 +172,15 @@ module Solana
     def collect_account_keys(additional_signers = [])
       keys = {}
 
-      # Fee payer (first signer) is always first
-      fee_payer = @signers.first.public_key_bytes
+      # Fee payer (first signer) is always first. In a fully-keyless build there
+      # are no local @signers, so fall back to the first ADDITIONAL signer
+      # (callers order additional_signers with the fee payer first). The
+      # serialize/serialize_partial guards guarantee at least one is present.
+      fee_payer = @signers.first&.public_key_bytes || additional_signers.first
       keys[fee_payer] = { is_signer: true, is_writable: true }
 
-      # Other signers
-      @signers[1..].each do |signer|
+      # Other signers (drop(1) is nil-safe when @signers is empty — keyless build)
+      @signers.drop(1).each do |signer|
         pk = signer.public_key_bytes
         keys[pk] ||= { is_signer: true, is_writable: false }
         keys[pk][:is_signer] = true
