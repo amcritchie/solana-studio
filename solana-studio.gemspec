@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name          = "solana-studio"
-  spec.version       = "0.4.3"
+  spec.version       = "0.4.5"
   spec.authors       = ["Alex McRitchie"]
   spec.email         = ["solana-studio@mcritchie.studio"]
 

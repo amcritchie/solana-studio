@@ -110,7 +110,10 @@ module Solana
     # additional_signers: array of pubkey bytes (32-byte strings) that will sign later.
     def serialize_partial(additional_signers: [])
       raise "No blockhash set" unless @recent_blockhash
-      raise "No signers" if @signers.empty?
+      # A fully KEYLESS build (zero local signers, all slots filled by external
+      # additional_signers) is legitimate for multi-party coordination where the
+      # server never holds a key — only require SOME signer is accounted for.
+      raise "No signers" if @signers.empty? && additional_signers.empty?
       raise "No instructions" if @instructions.empty?
 
       # OPSEC-043: keep additional signers in a local — never an instance ivar.
@@ -169,12 +172,15 @@ module Solana
     def collect_account_keys(additional_signers = [])
       keys = {}
 
-      # Fee payer (first signer) is always first
-      fee_payer = @signers.first.public_key_bytes
+      # Fee payer (first signer) is always first. In a fully-keyless build there
+      # are no local @signers, so fall back to the first ADDITIONAL signer
+      # (callers order additional_signers with the fee payer first). The
+      # serialize/serialize_partial guards guarantee at least one is present.
+      fee_payer = @signers.first&.public_key_bytes || additional_signers.first
       keys[fee_payer] = { is_signer: true, is_writable: true }
 
-      # Other signers
-      @signers[1..].each do |signer|
+      # Other signers (drop(1) is nil-safe when @signers is empty — keyless build)
+      @signers.drop(1).each do |signer|
         pk = signer.public_key_bytes
         keys[pk] ||= { is_signer: true, is_writable: false }
         keys[pk][:is_signer] = true
