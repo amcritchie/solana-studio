@@ -2,6 +2,20 @@
 
 The format is [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.4.6 (2026-06-02)
+
+### Added
+- **`Solana::SystemProgram`** — System-Program instruction encoders for durable nonce support: `create_account` (ix 0), `advance_nonce_account` (4), `withdraw_nonce_account` (5), `initialize_nonce_account` (6), `authorize_nonce_account` (7). Plus constants `RECENT_BLOCKHASHES_SYSVAR`, `RENT_SYSVAR`, `NONCE_ACCOUNT_LENGTH` (80). A durable nonce lets a tx stay valid indefinitely (until consumed) instead of expiring with a ~90s recent blockhash — the canonical pattern for long / async / multi-party signing.
+- **`Solana::NonceAccount.parse(bytes)`** — parses an 80-byte nonce account (version, state, authority, stored nonce, lamports_per_signature) with `initialized?` + `authority?(expected)` guards.
+
+### Tests
+- `test/system_program_test.rb` (8 tests): **byte-match** each encoder against the exact `@solana/web3.js` layout (u32 LE index + fields, account metas + signer flags), nonce-account parse round-trip (init + uninit), and an advance-instruction-into-partial-tx composition check.
+
+## v0.4.5 (2026-06-02)
+
+### Fixed
+- **Fully keyless `serialize_partial`** — a build with zero local `@signers` (every required signature supplied externally) now works: the empty-signers guard fires only when neither a local nor an additional signer is present, the fee payer falls back to the first additional signer, and `@signers.drop(1)` is nil-safe. Enables the no-server-key multi-party signing console. (v0.4.4 began this; v0.4.5 completed the fee-payer/signers fallback.)
+
 ## v0.4.3 (2026-05-27)
 
 ### Fixed
