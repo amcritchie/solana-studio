@@ -52,7 +52,9 @@ For shared concerns that need host-specific glue (e.g. Rails session for `AuthVe
 - `tx.add_instruction(program_id, accounts, data)` — append instruction
 - `tx.sign(keypairs, blockhash)` — sign with one or more keypairs
 - `tx.serialize` — base64-encoded wire format
-- `tx.serialize_partial` — for multi-signer partial signing
+- `tx.serialize_partial` — for multi-signer partial signing (server-first: server signs, leaves zero slots for client signers)
+- `Transaction.cosign_wire(signed_wire_bytes, signer:, require_complete: true)` — **client-first cosign.** Add ONE signature to an already-(partially-)signed wire tx WITHOUT rebuilding it: parses the compact-u16 sig count + message header, locates `signer` in the account-key list, asserts that slot is still zero (never clobbers a real sig), signs the EXACT message bytes, writes the 64-byte sig into the slot. `require_complete:` (default true) re-asserts OPSEC-017 after the write — every required slot non-zero, i.e. this is the LAST signer and the tx is broadcastable; pass `false` for an intermediate cosign in a 3+-signer chain. Pure Ruby, no RPC. Used by the Phantom-signs-FIRST / server-cosigns-SECOND entry flow (clears Phantom's multi-signer-order "could be malicious" banner). `cosign_wire_base64` is the base64-in/base64-out convenience wrapper.
+- `Transaction.read_compact_u16(bytes, offset)` — decode a ShortVec compact-u16, returns `[value, next_offset]` (the wire-parser primitive behind `cosign_wire`)
 - `Transaction.find_pda(program_id, seeds)` — PDA derivation
 - `Transaction.anchor_discriminator(name)` — SHA256-based 8-byte discriminator
 - `Transaction.on_curve?(pubkey)` — check if pubkey is on Ed25519 curve

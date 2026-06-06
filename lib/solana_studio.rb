@@ -8,5 +8,5 @@ require_relative "solana/nonce_account"
 require_relative "solana/auth_verifier"
 
 module SolanaStudio
-  VERSION = "0.4.6"
+  VERSION = "0.4.7"
 end
