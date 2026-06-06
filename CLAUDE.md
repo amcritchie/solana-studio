@@ -80,14 +80,15 @@ For shared concerns that need host-specific glue (e.g. Rails session for `AuthVe
 
 ## Testing
 
-- `ruby -Itest -e 'Dir["test/*_test.rb"].sort.each { |f| require File.expand_path(f) }'` — 43 tests
+- `ruby -Itest -e 'Dir["test/*_test.rb"].sort.each { |f| require File.expand_path(f) }'` — 63 tests
 - **Keypair**: generate, base58 roundtrip, from_bytes, from_json_file, sign, address alias
 - **Borsh**: encode/decode roundtrips for u8, u16, u32, u64, string, bool, pubkey, vec, bytes32
-- **Transaction**: anchor discriminator (determinism, uniqueness), PDA derivation (determinism, not on curve), on_curve? check, serialization, signer-count validation (OPSEC-017), no instance signer state (OPSEC-043), error cases
+- **Transaction**: anchor discriminator (determinism, uniqueness), PDA derivation (determinism, not on curve), on_curve? check, serialization, signer-count validation (OPSEC-017), no instance signer state (OPSEC-043), partial-sign (server-first), `cosign_wire` client-first cosign (correct slot, sig+message untouched, 2/2 valid, clobber-refusal, non-signer rejection, off-by-one + malformed-header guards, base64 round-trip), `read_compact_u16`, error cases
+- **Client**: `simulate_transaction` server-side pre-flight (success + err shapes)
 - **AuthVerifier**: host-bound verify (OPSEC-018), host mismatch + blank-host + partial-prefix rejection
 
 ## Repo
 
 - GitHub: https://github.com/amcritchie/solana-studio
 - Install: `gem "solana-studio", "~> 0.4.0"` (RubyGems — consumer apps use this form). The legacy `git:` install form (`gem "solana-studio", git: "...", tag: "v0.4.0"`) still works but should not be used for new code.
-- Version: 0.4.3 (gemspec canonical). Renamed from `solana_studio` in v0.4.0 (2026-05-17).
+- Version: 0.4.7 (gemspec canonical). Renamed from `solana_studio` in v0.4.0 (2026-05-17). v0.4.7 adds `Transaction.cosign_wire` (client-first multi-signer cosign) + `Client#simulate_transaction` for the Phantom-signs-first entry flow.
