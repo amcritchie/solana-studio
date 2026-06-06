@@ -36,6 +36,7 @@ For shared concerns that need host-specific glue (e.g. Rails session for `AuthVe
 - `client.get_balance(pubkey)` — SOL balance in lamports
 - `client.get_token_account_balance(ata)` — SPL token balance
 - `client.send_transaction(tx_base64)` — submit signed transaction
+- `client.simulate_transaction(tx_base64, sig_verify:, replace_recent_blockhash:, commitment:)` — server-side pre-flight; returns the RPC `value` (`err`/`logs`/`unitsConsumed`), `value["err"]` nil on success. `sig_verify: false` to simulate a tx without all sigs present.
 - `client.get_latest_blockhash` — recent blockhash for transactions
 - Retries on rate limit (429) and expired blockhash errors
 

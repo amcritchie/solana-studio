@@ -7,9 +7,11 @@ The format is [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pro
 ### Added
 - **`Solana::Transaction.cosign_wire(signed_wire_bytes, signer:, require_complete:)`** — client-first cosign. Adds one signature to an already-(partially-)signed wire tx WITHOUT rebuilding it: parses the compact-u16 signature count + message header, finds the signer's account-key index, asserts that slot is currently zero (never clobbers a real signature), signs the EXACT message bytes, writes the 64-byte signature in, and (when `require_complete:`, default true) re-asserts OPSEC-017 — every required slot non-zero. Pure Ruby, no RPC. Enables the Phantom-signs-FIRST / server-cosigns-SECOND entry flow that clears Phantom's multi-signer-order "could be malicious" Lighthouse banner. `cosign_wire_base64` is the base64 wrapper.
 - **`Solana::Transaction.read_compact_u16(bytes, offset)`** — ShortVec compact-u16 decoder, `[value, next_offset]` (wire-parser primitive behind `cosign_wire`).
+- **`Solana::Client#simulate_transaction(tx_base64, sig_verify:, replace_recent_blockhash:, commitment:)`** — server-side `simulateTransaction` pre-flight; returns the RPC `value` object (`err`/`logs`/`unitsConsumed`). Lets the server run the same pre-broadcast simulation the entry board did client-side, now that broadcast moved server-side.
 
 ### Tests
 - `test/transaction_test.rb` (+9 tests): correct slot filled + verifies over message, other signer's sig + message bytes untouched, 2/2 sigs valid, refuses to clobber a filled slot, rejects a non-signer, off-by-one slot guard, malformed-header count-mismatch rejection, base64 round-trip.
+- `test/client_test.rb` (+2 tests): simulate_transaction sends the right RPC + parses `value`; surfaces a program error in `value["err"]`.
 
 ## v0.4.6 (2026-06-02)
 

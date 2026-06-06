@@ -59,4 +59,44 @@ class Solana::ClientTest < Minitest::Test
     refute_nil captured_request
     assert_equal "/", captured_request.path
   end
+
+  def test_simulate_transaction_sends_correct_rpc_and_returns_value
+    client = Solana::Client.new(rpc_url: "https://api.devnet.solana.com")
+
+    captured_body = nil
+    client.define_singleton_method(:http_post) do |body|
+      captured_body = body
+      resp = Object.new
+      resp.define_singleton_method(:body) do
+        '{"jsonrpc":"2.0","id":1,"result":{"context":{"slot":1},' \
+          '"value":{"err":null,"logs":["Program log: ok"],"unitsConsumed":4200}}}'
+      end
+      resp
+    end
+
+    value = client.simulate_transaction("BASE64TX", sig_verify: false)
+
+    assert_equal "simulateTransaction", captured_body[:method]
+    assert_equal "BASE64TX", captured_body[:params][0]
+    assert_equal false, captured_body[:params][1][:sigVerify]
+    assert_equal "base64", captured_body[:params][1][:encoding]
+    assert_nil value["err"]
+    assert_equal 4200, value["unitsConsumed"]
+    assert_includes value["logs"], "Program log: ok"
+  end
+
+  def test_simulate_transaction_surfaces_program_error
+    client = Solana::Client.new(rpc_url: "https://api.devnet.solana.com")
+    client.define_singleton_method(:http_post) do |_body|
+      resp = Object.new
+      resp.define_singleton_method(:body) do
+        '{"jsonrpc":"2.0","id":1,"result":{"context":{"slot":1},' \
+          '"value":{"err":{"InstructionError":[2,{"Custom":6001}]},"logs":[]}}}'
+      end
+      resp
+    end
+
+    value = client.simulate_transaction("BASE64TX")
+    refute_nil value["err"]
+  end
 end

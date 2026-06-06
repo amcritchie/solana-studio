@@ -54,6 +54,22 @@ module Solana
       call("sendTransaction", [signed_tx_base64, opts])
     end
 
+    # Server-side pre-flight: run simulateTransaction against a base64 wire tx.
+    # sig_verify:false lets us simulate a tx without all signatures present (or
+    # without re-verifying ones that are). Returns the RPC `value` object
+    # ({ "err" =>, "logs" =>, "unitsConsumed" =>, … }); `value["err"]` is nil on
+    # success. Mirrors the client-side simulate the entry board used to run.
+    def simulate_transaction(signed_tx_base64, sig_verify: false, replace_recent_blockhash: false, commitment: "confirmed")
+      opts = {
+        encoding: "base64",
+        sigVerify: sig_verify,
+        replaceRecentBlockhash: replace_recent_blockhash,
+        commitment: commitment
+      }
+      result = call("simulateTransaction", [signed_tx_base64, opts])
+      result&.dig("value")
+    end
+
     def confirm_transaction(signature, commitment: "confirmed")
       call("getSignatureStatuses", [[signature], { searchTransactionHistory: true }])
     end
