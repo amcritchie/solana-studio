@@ -1,5 +1,9 @@
 # Security Audit — solana-studio
 
+> **ARCHIVE-ONLY AUDIT SNAPSHOT.** This report captured the pre-publication
+> state of the gem before later releases. Use `README.md`, `RUNBOOK.md`,
+> `CHANGELOG.md`, and the current test suite before acting on any item below.
+
 **Date:** 2026-05-17 (pre-publication)
 **Scope:** Full code review + `gitleaks` git-history scan + `bundle-audit` dependency check
 **Verdict:** **NEEDS FIXES before public RubyGems publication** → **all HIGH + all MEDIUM addressed in v0.4.1** (see "Status after v0.4.1" below)
@@ -19,7 +23,9 @@
 | 9 | INFO | Default RPC URL is devnet | ⏳ Deferred (documentation polish for README) |
 | 10 | INFO | Hardcoded canonical program IDs | ✅ No action needed (correct as-is) |
 
-**Re-audit recommended after v0.4.1** before flipping repo public + pushing to RubyGems.
+Historical note: this audit recommended a re-audit after v0.4.1 before flipping
+the repo public and pushing to RubyGems. Current release state belongs in
+`CHANGELOG.md`.
 
 ---
 
