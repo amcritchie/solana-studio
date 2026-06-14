@@ -1,5 +1,11 @@
 # SolanaStudio Gem
 
+> **ARCHIVE-ONLY MIGRATION CONTEXT.** This file is no longer the agent
+> entrypoint or source of truth. Start at `/Users/alex/projects/AGENTS.md`.
+> Current Solana Studio docs live in `README.md` and `RUNBOOK.md`. Do not
+> update this file except to remove it after Claude compatibility with
+> generated `AGENTS.md` is verified.
+
 Generic Solana primitives for Ruby. Extracted from Turf Monster's `app/services/solana/` layer.
 
 ## Architecture
