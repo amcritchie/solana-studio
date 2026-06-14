@@ -86,7 +86,7 @@ pda, bump = Solana::Transaction.find_pda(
 
 ## Development Notes
 
-See [RUNBOOK.md](./RUNBOOK.md) for troubleshooting. `CLAUDE.md` remains legacy migration context while neutral docs are extracted.
+See [RUNBOOK.md](./RUNBOOK.md) for troubleshooting and local test commands.
 
 ## License
 
