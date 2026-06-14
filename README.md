@@ -8,8 +8,10 @@ Ruby primitives for building on Solana — JSON-RPC client, Ed25519 keypairs, Bo
 
 ```ruby
 # Gemfile
-gem "solana-studio", git: "https://github.com/amcritchie/solana-studio.git"
+gem "solana-studio", "~> 0.4.7"
 ```
+
+Consumer apps use the RubyGems release. Use a local path only while actively developing the gem, and restore the RubyGems dependency before merging.
 
 ## Usage
 
@@ -84,7 +86,7 @@ pda, bump = Solana::Transaction.find_pda(
 
 ## Development Notes
 
-See [CLAUDE.md](./CLAUDE.md) for detailed development context including the full API reference, design decisions, and AI agent instructions.
+See [RUNBOOK.md](./RUNBOOK.md) for troubleshooting. `CLAUDE.md` remains legacy migration context while neutral docs are extracted.
 
 ## License
 
